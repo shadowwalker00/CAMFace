@@ -4,15 +4,32 @@
 
 ## Requirement
 
-
+* Numpy 1.14.2
+* Pandas 0.22.0
+* Skimage 0.13.1
+* Tensorflow 1.12.0
 
 ## Usage
 
+### 1. Prepare Dataset
 
+There're two dataset included in our project, Caltech256 and MITKface. We use class Dataset to create train and test dataset. Since we didn't upload the train and test dataset. First of all you need to create the dataset by executing the following code. For example,
 
-### VGG Pretrained Weight
+```
+python3 src/dataset.py --name caltech
+```
+
+After finishing this, we can find the correspoding train.pickle and test.pickle in the directory it shows.
+
+### 2. Train Network
+
+###VGG Pretrained Weight
 
 The file is beyond 100M limitation so I store it into my Google Drive. Download [VGG Pretrained](https://drive.google.com/open?id=12lGgU9XjM4qIYzDJ7GtbjfEmcYir0E15) from here. Then put it into directory "trained_models/VGG".
+
+### 3. Test Network
+
+### 4. Generate Single Heatmap
 
 ## Result
 
