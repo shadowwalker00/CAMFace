@@ -10,7 +10,9 @@ import skimage.io
 import tensorflow as tf
 
 from util import load_image
-from Detector import Detector
+from detector import Detector
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 root_path = '/home/ghao/vizImpression'
 image_path = os.path.join(root_path,'datasets/face_impression/images/')
@@ -18,9 +20,9 @@ testset_path = os.path.join(root_path,'datasets/face_impression/test.pickle')
 label_path = os.path.join(root_path,'datasets/face_impression/label.pickle')
 weight_path = os.path.join(root_path,'trained_models/pretrained_weight/VGG/caffe_layers_value.pickle')
 pretrained_model = None
-model_path = os.path.join(root_path,'trained_models/VGG/')
-saved_model_name_testing = 'uncrop_model-14'
-output_image_path = 'out/cam/compare/'
+model_path = os.path.join(root_path,'trained_models/VGG/face/')
+saved_model_name_testing = 'loss_weight-14'
+output_image_path = 'out/cam/compare2'
 
 
 testset = pd.read_pickle(testset_path)
