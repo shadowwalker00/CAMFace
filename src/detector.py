@@ -92,7 +92,6 @@ class Detector():
                     "b",
                     shape=b.shape,
                     initializer=tf.constant_initializer(b))
-
             fc = tf.nn.bias_add( tf.matmul( x, cw ), b, name=scope)
 
         return fc
@@ -125,16 +124,7 @@ class Detector():
                 g-self.image_mean[1],
                 r-self.image_mean[2]
             ], axis=3)
-        '''
-        #OldTF
-        r, g, b = tf.split(3, 3, rgb)
-        bgr = tf.concat(3,
-            [
-                b-self.image_mean[0],
-                g-self.image_mean[1],
-                r-self.image_mean[2]
-            ])
-        '''
+
 
         relu1_1 = self.conv_layer( bgr, "conv1_1" )
         relu1_2 = self.conv_layer( relu1_1, "conv1_2" )
@@ -162,9 +152,7 @@ class Detector():
         relu5_1 = self.conv_layer( pool4, "conv5_1")
         relu5_2 = self.conv_layer( relu5_1, "conv5_2")
         relu5_3 = self.conv_layer( relu5_2, "conv5_3")
-
-        bias = tf.Variable(tf.constant(0.1, shape=[self.n_labels]))    #bias for last FC layer
-
+        
         conv6 = self.new_conv_layer( relu5_3, [3,3,512,1024], "conv6")
         gap = tf.reduce_mean( conv6, [1,2] )
 
@@ -174,7 +162,8 @@ class Detector():
                     shape=[1024, self.n_labels],
                     initializer=tf.random_normal_initializer(0., 0.01))
 
-        output = tf.matmul( gap, gap_w) + bias     #add bias
+        bias = tf.Variable(initial_value=tf.constant(0.1, shape=[self.n_labels]),name="Out/b")    #bias for last FC layer
+        output = tf.matmul( gap, gap_w) + bias                                                    #add bias
         return pool1, pool2, pool3, pool4, relu5_3, conv6, gap, output
 
     def get_classmap(self, label, conv6):

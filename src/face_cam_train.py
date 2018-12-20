@@ -5,11 +5,9 @@ import os
 import pandas as pd
 import numpy as np
 import pickle as Pickle
-import skimage.io
-import skimage.transform
 import tensorflow as tf
 from util import *
-from Detector import Detector
+from detector import Detector
 import argparse
 
 
@@ -18,7 +16,7 @@ image_path = os.path.join(root_path,'datasets/face_impression/images')
 trainset_path = os.path.join(root_path,'datasets/face_impression/train.pickle')
 weight_path = os.path.join(root_path,'trained_models/pretrained_weight/VGG/caffe_layers_value.pickle')
 model_path = os.path.join(root_path,'trained_models/VGG/face')
-saved_model_name = 'uncrop_model'
+saved_model_name = 'loss_weight'
 pretrained_path = os.path.join(root_path,'trained_models/pretrained_weight/VGG/')
 
 
@@ -27,9 +25,10 @@ weight_decay_rate = 0.0005
 momentum = 0.9
 batch_size = 20
 
-def train(model,n_epochs):
+def trainNet(model,n_epochs):
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     total_loss = []
-    init_learning_rate = 0.0001
+    init_learning_rate = 0.001
     #read data   
     trainset = pd.read_pickle(trainset_path)
     print ('Read from disk: trainset')
@@ -38,21 +37,29 @@ def train(model,n_epochs):
     graph = tf.Graph()
     with graph.as_default():
         learning_rate = tf.placeholder( tf.float32, [])   #learning rate
-        images_tf = tf.placeholder( tf.float32, [None, 224, 224, 3], name="images")         #image placeholder
-
+        images_tf = tf.placeholder( tf.float32, [None, 224, 224, 3], name="images")         # image placeholder
         #Modify: placeholder's size
-        labels_tf = tf.placeholder( tf.float32, [None,40], name='labels')                   #label placeholder
+        labels_tf = tf.placeholder( tf.float32, [None,40], name='labels')                   # label placeholder
 
         detector = Detector(weight_path,40)
-        p1,p2,p3,p4,conv5, conv6, gap, output = detector.inference(images_tf)               #return each conv
+        p1,p2,p3,p4,conv5, conv6, gap, output = detector.inference(images_tf)               # return each conv
     
-        #Modify: MSE loss function
-        loss_tf = tf.losses.mean_squared_error(labels = labels_tf,predictions=output) 
+        """
+        Modify: MSE loss function
+        Add Weight into the loss function
+        """
+
+        loss_weights = tf.constant([0.24,0.39,0.41,0.71,0.25,0.55,0.52,0.50,0.27,0.49,0.50,0.72,0.58,0.62,
+            0.62,0.56,0.18,0.72,0.75,0.52,0.65,0.72,0.72,0.53,0.33,0.24,0.78,0.84,0.55,0.42,0.55,
+            0.69,0.30,0.49,0.74,0.28,0.45,0.27,0.43,0.60])
+        loss_weights = tf.reshape(loss_weights, [-1, 40])
+        
+        loss_tf = tf.losses.mean_squared_error(labels = labels_tf, predictions=output, weights=loss_weights) 
 
         weights_only = filter(lambda x: x.name.endswith('W:0'), tf.trainable_variables())
         weight_decay = tf.reduce_sum(tf.stack([tf.nn.l2_loss(x) for x in weights_only])) * weight_decay_rate
     
-        loss_tf += weight_decay                                                        #update
+        loss_tf += weight_decay                                                              # update
         saver = tf.train.Saver( max_to_keep=50 )
 
         optimizer = tf.train.MomentumOptimizer(init_learning_rate, momentum)
@@ -67,8 +74,9 @@ def train(model,n_epochs):
         if model:
             print ('Pretrained model loaded from ' + model + ' (this overwrites the initial weights loaded to the model)')
             saver.restore(sess, os.path.join(pretrained_path,model))
-
-
+        #show the trainable variables
+        #variable_names = [v.name for v in tf.trainable_variables()]
+        #print(variable_names)        
         iterations = 0
         loss_list = []
         print ('Starting the training ...')
@@ -145,7 +153,7 @@ if __name__=="__main__":
     allPara = parser.parse_args()
     pretrained_model = allPara.model
     epochs = allPara.epoch
-    train(pretrained_model,epochs)
+    trainNet(model=pretrained_model,n_epochs=epochs)
                 
 
 
