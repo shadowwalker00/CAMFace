@@ -61,7 +61,11 @@ For example, part of the spearman table shows like this
 
 ### 4. Generate Compare faces under opposite traits
 
+```
+python3 src/face_cam_generate.py 
+```
 
+**Note:** The output directory should be modified in the script.
 
 ### 5. Generate Single Heatmap
 
@@ -71,7 +75,9 @@ For example, part of the spearman table shows like this
 
 **Top 5 face with highest value for happy attribute and Last 5 with the lowest value for happy attribute**
 
-[![happy_unhappy.jpg](https://i.loli.net/2018/12/20/5c1acc5330639.jpg)](https://i.loli.net/2018/12/20/5c1acc5330639.jpg)
+[![happy_unhappy.jpg](https://i.loli.net/2018/12/21/5c1c1f299ac43.jpg)](https://i.loli.net/2018/12/21/5c1c1f299ac43.jpg)
+
+(https://i.loli.net/2018/12/20/5c1acc5330639.jpg)
 
 **Example to generate the heatmap of happy attribute with the given face**
 
