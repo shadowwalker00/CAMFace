@@ -23,11 +23,11 @@ After finishing this, we can find the correspoding **train.pickle, test.pickle a
 
 ### 2. Train Network
 
-#### 1. VGG Pretrained Weight
+#### 2.1. VGG Pretrained Weight
 
 In the project, we utilize **VGG16** as our network and initialize weights from Conv1_1 to Conv5_3 using the pretrained weight. Download [VGG Pretrained](https://drive.google.com/open?id=12lGgU9XjM4qIYzDJ7GtbjfEmcYir0E15) from here. Put it into directory "trained_models/pretrained_weight/VGG". In the project, we learn the whole network.
 
-#### 2. Train Process
+#### 2.2. Train Process
 
 ```
 python3 src/face_cam_train.py --epoch 15 --model modelname
@@ -69,7 +69,13 @@ python3 src/face_cam_generate.py
 
 ### 5. Generate Single Heatmap
 
+Firstly, you should put the test image under directory demo.
 
+Trait parameter is the trait that you want to show. And model is the model save before.
+
+```
+python3 src/demo.py --img test.jpeg --trait happy --model loss_weight-14
+```
 
 ## Result
 
@@ -77,8 +83,6 @@ python3 src/face_cam_generate.py
 
 [![happy_unhappy.jpg](https://i.loli.net/2018/12/21/5c1c1f299ac43.jpg)](https://i.loli.net/2018/12/21/5c1c1f299ac43.jpg)
 
-(https://i.loli.net/2018/12/20/5c1acc5330639.jpg)
-
 **Example to generate the heatmap of happy attribute with the given face**
 
-[![hillary1_caring_4.11.png](https://i.loli.net/2018/12/20/5c1acc5330bc3.png)](https://i.loli.net/2018/12/20/5c1acc5330bc3.png)
+[![test_cam.jpeg](https://i.loli.net/2018/12/21/5c1c277746d41.jpeg)](https://i.loli.net/2018/12/21/5c1c277746d41.jpeg)
