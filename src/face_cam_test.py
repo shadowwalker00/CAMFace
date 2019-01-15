@@ -7,7 +7,7 @@ import numpy as np
 import pickle as Pickle
 import tensorflow as tf
 import scipy.stats as stats
-from detector_freeze import Detector
+from detector import Detector
 from util import *
 import argparse
 
@@ -24,8 +24,16 @@ def testNet(model,output_file):
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     testset = pd.read_pickle(testset_path)
     labelset = pd.read_pickle(label_path)
-    n_labels = 40
-    batch_size = 20
+    
+    baseline = np.array([0.24,0.39,0.41,0.71,0.25,0.55,0.52,0.50,0.27,0.49,0.50,0.72,0.58,0.62,
+            0.62,0.56,0.18,0.72,0.75,0.52,0.65,0.72,0.72,0.53,0.33,0.24,0.78,0.84,0.55,0.42,0.55,
+            0.69,0.30,0.49,0.74,0.28,0.45,0.27,0.43,0.60])
+    
+    n_labels = 21
+    index_want = np.argsort(baseline)[::-1][0:n_labels]
+
+    batch_size = 40
+    
     graph = tf.Graph()
     with graph.as_default():
         images_tf = tf.placeholder( tf.float32, [None, 224, 224, 3], name="images")
@@ -53,6 +61,7 @@ def testNet(model,output_file):
             current_labels = np.array(current_data['label'].values)            
             current_labels_deal = np.zeros((current_labels.shape[0],n_labels))
             for index,row in enumerate(current_labels):
+                row = row[index_want]
                 current_labels_deal[index,:] = row
             acc, output_val = sess.run([loss_tf, output],feed_dict={images_tf: current_images,labels_tf: current_labels_deal})        
             acc_list.append(acc)
@@ -65,9 +74,12 @@ def testNet(model,output_file):
             print("prediction error for batch({}-{}):{}".format(start,end,sum(acc_list)/len(acc_list)))
             acc_mean += sum(acc_list)/len(acc_list)
         print("Overall Prediction Error for Testset (size:{}):{}".format(testset.shape,acc_mean/count))
+        
+
         testOutMatrix = np.zeros((testset.shape[0],n_labels))
         for i in range(testset.shape[0]):
-            testOutMatrix[i,:] = testset['label'].values[i].flatten()
+            temp = testset['label'].values[i]
+            testOutMatrix[i,:] = temp[index_want].flatten()
     
         print("====Starting calculating spearman rank correlation====")
     
@@ -78,7 +90,7 @@ def testNet(model,output_file):
             pho, p_value = stats.stats.spearmanr(testOutMatrix[:,i],pred[:,i])
             phos.append(pho)
             p_values.append(p_value)
-        combine = list(zip(labelset["labelname"].values,phos,p_values))
+        combine = list(zip(labelset["labelname"].values[index_want],phos,p_values))
         combine = sorted(combine,key=lambda x:x[1],reverse=True)
     
         with open(os.path.join(out_path,output_file),'w+') as f:
@@ -90,7 +102,8 @@ def testNet(model,output_file):
                 f.write("\t")
                 f.write(str(combine[i][2]))
                 f.write("\n") 
-        print("====Write result into spearman.txt====")
+        print("====Write result into out/{}====".format(output_file))
+
 
 if __name__=="__main__":
     #parse the arguments
@@ -103,5 +116,5 @@ if __name__=="__main__":
     model = allPara.model
 
     #start test   
-    #python3 src/face_cam_test.py --model trainWhole-14 --file pretrianed.txt
+    #python3 src/face_cam_test.py --model loss_weight-14 --file pretrianed.txt
     testNet(model = model,output_file=filename)

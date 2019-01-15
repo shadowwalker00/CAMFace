@@ -49,6 +49,7 @@ def demo(image_name,traitname,model):
         conv6_val, output_val = sess.run([conv6, output],feed_dict={images_tf: current_images})
         classmap_answer = sess.run(classmap,feed_dict={labels_tf: [index]*current_images.shape[0],conv6: conv6_val})
         classmap_vis = map(lambda x: ((x-x.min())/(x.max()-x.min())), classmap_answer)    
+        print(output_val)
         for index_image, (vis, ori,name) in enumerate(zip(classmap_vis, current_images, image_list)):
             plt.figure()
             plt.imshow(ori)

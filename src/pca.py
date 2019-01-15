@@ -21,7 +21,7 @@ pretrained_path = os.path.join(root_path,'trained_models/pretrained_weight/VGG/'
 
 # Hyper Parameters
 weight_decay_rate = 0.005
-momentum = 0.9
+momentum = 0.88
 batch_size = 40
 
 def trainNet(model_name,n_epochs):
@@ -33,19 +33,9 @@ def trainNet(model_name,n_epochs):
     
     return: no actual output, save trained model and loss.pkl which can used to plot the loss line
     """
-
-    #filter out part of the attribute
-    baseline = np.array([0.24,0.39,0.41,0.71,0.25,0.55,0.52,0.50,0.27,0.49,0.50,0.72,0.58,0.62,
-            0.62,0.56,0.18,0.72,0.75,0.52,0.65,0.72,0.72,0.53,0.33,0.24,0.78,0.84,0.55,0.42,0.55,
-            0.69,0.30,0.49,0.74,0.28,0.45,0.27,0.43,0.60])
-
-    goal_num = 21
-    index_want = np.argsort(baseline)[::-1][0:goal_num]
-    
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     total_loss = []
     init_learning_rate = 0.001
-
     #read data   
     trainset = pd.read_pickle(trainset_path)
     print ('Read from disk: trainset')
@@ -56,25 +46,20 @@ def trainNet(model_name,n_epochs):
         learning_rate = tf.placeholder( tf.float32, [])   #learning rate
         images_tf = tf.placeholder( tf.float32, [None, 224, 224, 3], name="images")         # image placeholder
         #Modify: placeholder's size
-        labels_tf = tf.placeholder( tf.float32, [None,goal_num], name='labels')                   # label placeholder
+        labels_tf = tf.placeholder( tf.float32, [None,40], name='labels')                   # label placeholder
 
-        detector = Detector(weight_path,goal_num)
+        detector = Detector(weight_path,40)
         p1,p2,p3,p4,conv5, conv6, gap, output = detector.inference(images_tf)               # return each conv
     
-
         """
         Modify: MSE loss function
         Add Weight into the loss function
         """
-        weight_para = np.array([0.24,0.39,0.41,0.71,0.25,0.55,0.52,0.50,0.27,0.49,0.50,0.72,0.58,0.62,
+
+        loss_weights = tf.constant([0.24,0.39,0.41,0.71,0.25,0.55,0.52,0.50,0.27,0.49,0.50,0.72,0.58,0.62,
             0.62,0.56,0.18,0.72,0.75,0.52,0.65,0.72,0.72,0.53,0.33,0.24,0.78,0.84,0.55,0.42,0.55,
             0.69,0.30,0.49,0.74,0.28,0.45,0.27,0.43,0.60])
-
-        loss_weights = tf.constant(weight_para[index_want])
-
-        loss_weights = tf.reshape(loss_weights, [-1, goal_num])
-
-        print("Loss Weight:{}".format(loss_weights))
+        loss_weights = tf.reshape(loss_weights, [-1, 40])
         
         loss_tf = tf.losses.mean_squared_error(labels = labels_tf, predictions=output, weights=loss_weights) 
 
@@ -102,6 +87,11 @@ def trainNet(model_name,n_epochs):
         iterations = 0
         loss_list = []
         print ('Starting the training ...')
+
+
+        #data_collect collects the output of conv6 to do PCA
+        data_collect = np.zeros(1,1024)
+
         for epoch in range(n_epochs):
             trainset.index = range(len(trainset))
             #Shuffle the index of all the trainset
@@ -125,27 +115,19 @@ def trainNet(model_name,n_epochs):
             
                 # Obtaining the label of each image
                 # transform it into a None*44 2d matrix
-                current_labels = np.array(current_data['label'].values)
-
-
-                current_labels_deal = np.zeros((current_labels.shape[0], goal_num))
-
+                current_labels = np.array(current_data['label'].values)            
+                current_labels_deal = np.zeros((current_labels.shape[0],40))
                 for index,row in enumerate(current_labels):
-                    row = row[index_want]
                     current_labels_deal[index,:] = row
                                 
                 # Run tensorflow session to start train
-                _, loss_val, output_val = sess.run(
-                        [train_op, loss_tf, output],
+                conv6_val= sess.run(
+                        [conv6],
                         feed_dict={
                             learning_rate: init_learning_rate,
                             images_tf: current_images,
                             labels_tf: current_labels_deal
                             })
-            
-                print("loss",loss_val)
-                loss_list.append(loss_val)   #store the loss value
-                total_loss.append(loss_val)  #store loss value to the total list, help to visualize the variation
 
                 iterations += 1            
                 #Print out every 10 iterations
@@ -168,8 +150,7 @@ def trainNet(model_name,n_epochs):
     with open(root_path+"/out/loss.pkl","wb") as f:
         Pickle.dump(total_loss, f)
 
-    print ('Processing took ' + str( np.around( (seconds_since_epoch_end - seconds_since_epoch_start)/60.0 , decimals=1) ) + ' minutes.')
-    
+    print ('Processing took ' + str( np.around( (seconds_since_epoch_end - seconds_since_epoch_start)/60.0 , decimals=1) ) + ' minutes.')    
 
 if __name__=="__main__":
     #parse the arguments

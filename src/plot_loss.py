@@ -11,6 +11,6 @@ import matplotlib.pyplot as plt
 with open('/home/ghao/vizImpression/out/loss.pkl','rb') as f:
 	loss = pickle.load(f)
 	plt.plot(range(len(loss)),loss)
-	plt.savefig("./loss_train_whole.png")
+	plt.savefig("./loss_weight_LOSSFUNC.png")
 	print("done")
 

@@ -65,6 +65,11 @@ def generate_heat(image_name,image_path,out_path,model='bias_model-14'):
 
 
 if __name__ == "__main__":
+
+    """
+    This part of code is to generate the test image
+    """
+    """
     image_list = [file for file in os.listdir(image_path)]
     image_list = sorted(image_list)        
     with open(root_path+"/out/test_face.csv","w") as csvfile: 
@@ -78,7 +83,10 @@ if __name__ == "__main__":
             temp_l = [name]
             temp_l.extend(temp)
             store_pred.append(temp_l)
-        writer.writerows(store_pred)       
+        writer.writerows(store_pred)      
+    """
+
+
 
 
 

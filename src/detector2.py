@@ -10,6 +10,10 @@ import tensorflow as tf
 
 
 class Detector():
+    """
+    Network:
+    conv1,conv2,conv3,conv4,conv5,GAP,W,Output
+    """
     def __init__(self, weight_file_path, n_labels):
         self.image_mean = [103.939, 116.779, 123.68]
         self.n_labels = n_labels
@@ -153,38 +157,17 @@ class Detector():
         relu5_2 = self.conv_layer( relu5_1, "conv5_2")
         relu5_3 = self.conv_layer( relu5_2, "conv5_3")
         
-        conv6 = self.new_conv_layer( relu5_3, [3,3,512,1024], "conv6")
-        gap = tf.reduce_mean( conv6, [1,2] )
-        """
-        #loading PCA
-        with open('./out/pca.pickle', 'rb') as f:
-            pcaObj = Pickle.load(f)
+        gap = tf.reduce_mean( relu5_3, [1,2] )
 
-        print("in Detector.py shape is{}".format(gap.shape))
-        #sess=tf.Session()
-        #gap_numpy = gap.eval(session=sess)
-        
-        gap_pca = pcaObj.transform(gap_numpy)
-        """
-
-        """Add another hidden layer"""
         with tf.variable_scope("GAP"):
             gap_w = tf.get_variable(
                     "W",
-                    shape=[1024, 700],
+                    shape=[512, self.n_labels],
                     initializer=tf.random_normal_initializer(0., 0.01))
-            gap_bias = tf.Variable(initial_value=tf.constant(0.1, shape=[700]),name="b")              #bias for last FC layer    
-            hidden = tf.matmul(gap, gap_w) + gap_bias                                                 #add bias
-
-        with tf.variable_scope("Out"):
-            out_w = tf.get_variable(
-                    "W",
-                    shape=[700, self.n_labels],
-                    initializer=tf.random_normal_initializer(0., 0.01))
-            out_bias = tf.Variable(initial_value=tf.constant(0.1, shape=[self.n_labels]),name="b")       #bias for last FC layer    
-            output = tf.matmul(hidden, out_w) + out_bias                                                 #add bias
+            bias = tf.Variable(initial_value=tf.constant(0.1, shape=[self.n_labels]),name="b")    #bias for last FC layer
         
-        return pool1, pool2, pool3, pool4, relu5_3, conv6, gap, output
+        output = tf.matmul( gap, gap_w) + bias                                                    #add bias
+        return pool1, pool2, pool3, pool4, relu5_3, gap, output
 
     def get_classmap(self, label, conv6):
         conv6_resized = tf.image.resize_bilinear( conv6, [224, 224] )
