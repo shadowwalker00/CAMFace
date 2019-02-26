@@ -4,6 +4,8 @@ import os
 import pandas as pd
 import random
 import argparse
+import xlrd
+
 
 class Dataset:
 	def __init__(self):
@@ -51,7 +53,7 @@ class Dataset:
 		elif datasetName == "face":
 			if not os.path.exists(trainset_path):
 				data = xlrd.open_workbook(os.path.join(self.face_rootpath,'psychology-attributes.xlsx'))
-				table = data.sheets()[1]
+				table = data.sheets()[1]				
 				nrows = table.nrows
 				print(table.row_values(0))
 				raw_data = []
@@ -67,7 +69,7 @@ class Dataset:
 				dataset = pd.DataFrame({'image_path': filename_list})
 				dataset["label"] = raw_data
 				trainset = dataset[:4000]
-				testset = dataset[4001:]
+				testset = dataset[4000:]
 				trainset.to_pickle(os.path.join(self.face_rootpath,"train.pickle"))
 				testset.to_pickle(os.path.join(self.face_rootpath,"test.pickle"))	
 				print("========================================")

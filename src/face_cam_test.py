@@ -21,7 +21,7 @@ weight_path = os.path.join(root_path,'trained_models/pretrained_weight/VGG/caffe
 
 
 def testNet(model,output_file):
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    #os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     testset = pd.read_pickle(testset_path)
     labelset = pd.read_pickle(label_path)
     
@@ -29,7 +29,7 @@ def testNet(model,output_file):
             0.62,0.56,0.18,0.72,0.75,0.52,0.65,0.72,0.72,0.53,0.33,0.24,0.78,0.84,0.55,0.42,0.55,
             0.69,0.30,0.49,0.74,0.28,0.45,0.27,0.43,0.60])
     
-    n_labels = 21
+    n_labels = 40
     index_want = np.argsort(baseline)[::-1][0:n_labels]
 
     batch_size = 40
@@ -95,13 +95,8 @@ def testNet(model,output_file):
     
         with open(os.path.join(out_path,output_file),'w+') as f:
             for i in range(n_labels):
+                f.write(combine[i][0].ljust(20)+" "+str(combine[i][1]).ljust(20)+" "+str(combine[i][2]).ljust(20)+"\n")
                 print(combine[i])
-                f.write(combine[i][0])
-                f.write("\t\t\t")                        
-                f.write(str(combine[i][1]))
-                f.write("\t")
-                f.write(str(combine[i][2]))
-                f.write("\n") 
         print("====Write result into out/{}====".format(output_file))
 
 

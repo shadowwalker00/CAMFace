@@ -86,3 +86,16 @@ python3 src/demo.py --img test.jpeg --trait happy --model loss_weight-14
 **Example to generate the heatmap of happy attribute with the given face**
 
 [![test_cam.jpeg](https://i.loli.net/2018/12/21/5c1c277746d41.jpeg)](https://i.loli.net/2018/12/21/5c1c277746d41.jpeg)
+
+## TODO
+
+- [x] use conv52 feature map instead of feature conv53
+- [x] add batch normalization
+- [ ] add dropout
+- [ ] face pretrained weight
+- [ ] 
+
+
+
+
+

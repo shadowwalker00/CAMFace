@@ -10,6 +10,10 @@ import tensorflow as tf
 
 
 class Detector():
+    """
+    Network:
+    conv1,conv2,conv3,conv4,conv5,GAP,W,Output
+    """
     def __init__(self, weight_file_path, n_labels):
         self.image_mean = [103.939, 116.779, 123.68]
         self.n_labels = n_labels
@@ -48,16 +52,7 @@ class Detector():
 
             conv = tf.nn.conv2d( bottom, conv_weights, [1,1,1,1], padding='SAME')
             bias = tf.nn.bias_add( conv, conv_biases )
-            relu = tf.nn.relu(bias)
-
-            wb_mean, wb_var = tf.nn.moments(relu,[0,1,2])
-            
-            beta = tf.Variable(tf.constant(0.0, shape=[relu.shape[3]]))
-            gamma = tf.Variable(tf.constant(1.0, shape=[relu.shape[3]]))
-            variance_epsilon = 0.001
-            relu = tf.nn.batch_normalization(relu, wb_mean, wb_var, beta, gamma, variance_epsilon,name=name)
-
-       
+            relu = tf.nn.relu( bias, name=name )
 
         return relu
 
@@ -109,6 +104,7 @@ class Detector():
         shape = bottom.get_shape().to_list()
         dim = np.prod( shape[1:] )
         x = tf.reshape( bottom, [-1, dim])
+
         with tf.variable_scope(name) as scope:
             w = tf.get_variable(
                     "W",
@@ -119,6 +115,7 @@ class Detector():
                     shape=[output_size],
                     initializer=tf.constant_initializer(0.))
             fc = tf.nn.bias_add( tf.matmul(x, w), b, name=scope)
+
         return fc
 
     def inference( self, rgb, train=False ):
@@ -134,7 +131,7 @@ class Detector():
 
 
         relu1_1 = self.conv_layer( bgr, "conv1_1" )
-        relu1_2 = self.conv_layer( relu1_1,"conv1_2")
+        relu1_2 = self.conv_layer( relu1_1, "conv1_2" )
 
         pool1 = tf.nn.max_pool(relu1_2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1],
                                          padding='SAME', name='pool1')
@@ -160,38 +157,17 @@ class Detector():
         relu5_2 = self.conv_layer( relu5_1, "conv5_2")
         relu5_3 = self.conv_layer( relu5_2, "conv5_3")
         
-        conv6 = self.new_conv_layer( relu5_3, [3,3,512,1024], "conv6")
-        gap = tf.reduce_mean( conv6, [1,2] )
-        """
-        #loading PCA
-        with open('./out/pca.pickle', 'rb') as f:
-            pcaObj = Pickle.load(f)
+        gap = tf.reduce_mean( relu5_3, [1,2] )
 
-        print("in Detector.py shape is{}".format(gap.shape))
-        #sess=tf.Session()
-        #gap_numpy = gap.eval(session=sess)
-        
-        gap_pca = pcaObj.transform(gap_numpy)
-        """
-
-        """Add another hidden layer"""
         with tf.variable_scope("GAP"):
             gap_w = tf.get_variable(
                     "W",
-                    shape=[1024, 300],
+                    shape=[512, self.n_labels],
                     initializer=tf.random_normal_initializer(0., 0.01))
-            gap_bias = tf.Variable(initial_value=tf.constant(0.1, shape=[300]),name="b")              #bias for last FC layer    
-            hidden = tf.matmul(gap, gap_w) + gap_bias                                                 #add bias
-
-        with tf.variable_scope("Out"):
-            out_w = tf.get_variable(
-                    "W",
-                    shape=[300, self.n_labels],
-                    initializer=tf.random_normal_initializer(0., 0.01))
-            out_bias = tf.Variable(initial_value=tf.constant(0.1, shape=[self.n_labels]),name="b")       #bias for last FC layer    
-            output = tf.matmul(hidden, out_w) + out_bias                                                 #add bias
+            bias = tf.Variable(initial_value=tf.constant(0.1, shape=[self.n_labels]),name="b")    #bias for last FC layer
         
-        return pool1, pool2, pool3, pool4, relu5_2, conv6, gap, output
+        output = tf.matmul( gap, gap_w) + bias                                                    #add bias
+        return pool1, pool2, pool3, pool4, relu5_3, gap, output
 
     def get_classmap(self, label, conv6):
         conv6_resized = tf.image.resize_bilinear( conv6, [224, 224] )

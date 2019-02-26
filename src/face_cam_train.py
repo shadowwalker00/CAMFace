@@ -38,17 +38,18 @@ def trainNet(model_name,n_epochs):
     baseline = np.array([0.24,0.39,0.41,0.71,0.25,0.55,0.52,0.50,0.27,0.49,0.50,0.72,0.58,0.62,
             0.62,0.56,0.18,0.72,0.75,0.52,0.65,0.72,0.72,0.53,0.33,0.24,0.78,0.84,0.55,0.42,0.55,
             0.69,0.30,0.49,0.74,0.28,0.45,0.27,0.43,0.60])
-
-    goal_num = 21
+    
+    goal_num = 40
     index_want = np.argsort(baseline)[::-1][0:goal_num]
     
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "5"
     total_loss = []
     init_learning_rate = 0.001
 
-    #read data   
+    #read data 
     trainset = pd.read_pickle(trainset_path)
-    print ('Read from disk: trainset')
+    print ('Read from disk: trainset(Size):{}'.format(len(trainset)))
+
     now = datetime.now(pytz.timezone('US/Eastern'))
     seconds_since_epoch_start = time.mktime(now.timetuple())
     graph = tf.Graph()
@@ -105,7 +106,8 @@ def trainNet(model_name,n_epochs):
         for epoch in range(n_epochs):
             trainset.index = range(len(trainset))
             #Shuffle the index of all the trainset
-            trainset = trainset.loc[np.random.permutation(len(trainset) )]
+            trainset = trainset.loc[np.random.permutation(len(trainset))[:1500]]
+            print ('Actual Size (Size):{}'.format(len(trainset)))
         
             for start, end in zip(
                 range( 0, len(trainset)+batch_size, batch_size),
